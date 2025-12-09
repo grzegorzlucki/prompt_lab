@@ -1,1 +1,6 @@
 instruction/
+build/
+src/public_transport_api.egg-info/
+src/public_transport_api/controllers/__pycache__/__init__.cpython-312.pyc
+src/public_transport_api/controllers/__pycache__/departures_controller.cpython-312.pyc
+src/public_transport_api/controllers/__pycache__/trips_controller.cpython-312.pyc
