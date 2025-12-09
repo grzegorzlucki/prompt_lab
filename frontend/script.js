@@ -6,7 +6,34 @@ let endCoords = null;
 
 document.addEventListener('DOMContentLoaded', () => {
     initMap();
+    initControls();
 });
+
+function initControls() {
+    // Set departure time to current time
+    const now = new Date();
+    now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+    document.getElementById('departure-time').value = now.toISOString().slice(0, 16);
+    
+    // Add search button handler
+    document.getElementById('search-btn').addEventListener('click', searchDepartures);
+}
+
+function searchDepartures() {
+    if (!startCoords || !endCoords) {
+        displayStatus('Please select both start and destination points on the map', 'text-red-600');
+        return;
+    }
+    
+    displayStatus('Searching for departures...', 'text-blue-600');
+    // API call will be implemented in next step
+}
+
+function displayStatus(message, colorClass) {
+    const statusDiv = document.getElementById('status-message');
+    statusDiv.textContent = message;
+    statusDiv.className = `text-center text-sm font-semibold ${colorClass}`;
+}
 
 function initMap() {
     // Initialize map centered on Wrocław
@@ -73,5 +100,7 @@ function handleMapClick(e) {
                 iconAnchor: [12, 41]
             })
         }).addTo(map).bindPopup('Start').openPopup();
+        
+        displayStatus('Now click to set destination', 'text-blue-600');
     }
 }
