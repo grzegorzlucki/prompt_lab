@@ -94,6 +94,7 @@ class DepartureService:
             
             # Filter and build departures
             departures = []
+            seen_trips = set()
             start_time_str = start_time.strftime('%H:%M:%S')
             
             for trip_id, trip_data in trips.items():
@@ -106,7 +107,7 @@ class DepartureService:
                     if stop['stop_id'] not in stop_map:
                         continue
                     
-                    if stop['departure_time'] >= start_time_str:
+                    if stop['departure_time'] >= start_time_str and trip_id not in seen_trips:
                         departures.append({
                             'trip_id': trip_id,
                             'route_id': trip_data['route_id'],
@@ -122,6 +123,7 @@ class DepartureService:
                             },
                             'distance': stop_map[stop['stop_id']]['distance']
                         })
+                        seen_trips.add(trip_id)
                         break
             
             # Sort by distance and limit

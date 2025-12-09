@@ -1,5 +1,31 @@
 document.addEventListener('DOMContentLoaded', () => {
 
+    // Initialize map
+    const map = L.map('map').setView([51.1079, 17.0385], 13);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '© OpenStreetMap'
+    }).addTo(map);
+
+    let startMarker, endMarker;
+    let selectingStart = true;
+
+    map.on('click', (e) => {
+        if (selectingStart) {
+            document.getElementById('start-lat').value = e.latlng.lat.toFixed(4);
+            document.getElementById('start-lon').value = e.latlng.lng.toFixed(4);
+            if (startMarker) map.removeLayer(startMarker);
+            startMarker = L.marker(e.latlng).addTo(map).bindPopup('Start').openPopup();
+            selectingStart = false;
+        } else {
+            document.getElementById('end-lat').value = e.latlng.lat.toFixed(4);
+            document.getElementById('end-lon').value = e.latlng.lng.toFixed(4);
+            if (endMarker) map.removeLayer(endMarker);
+            endMarker = L.marker(e.latlng).addTo(map).bindPopup('End').openPopup();
+            selectingStart = true;
+        }
+    });
+
     const apiEndpointSelector = document.getElementById('api-endpoint-selector');
     const callApiButton = document.getElementById('call-api-btn');
     const jsonOutputTextarea = document.getElementById('json-output');

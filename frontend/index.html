@@ -3,42 +3,106 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simple API Caller</title>
+    <title>Wroclaw Public Transport Finder</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <link rel="stylesheet" href="styles.css">
 </head>
-<body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
-<div class="bg-white p-8 rounded-lg shadow-lg w-full max-w-2xl">
-    <h1 class="text-3xl font-bold text-center text-gray-800 mb-6">Simple API Caller</h1>
-
-    <div class="mb-6">
-        <label for="api-endpoint-selector" class="block text-gray-700 text-sm font-bold mb-2">Select API Endpoint:</label>
-        <select id="api-endpoint-selector"
-                class="shadow appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-            <option value="http://localhost:5001/public_transport/city/wroclaw/closest_departures">Closest Departures (Wroclaw)</option>
-            <option value="http://localhost:5001/public_transport/city/wroclaw/trip/3_14613060">Trip Details (Trip ID: 3_14613060)</option>
-        </select>
-        <p class="text-xs text-gray-500 mt-1">
-            Choose an API endpoint to call.
-        </p>
+<body class="bg-gray-100 p-4">
+<div class="max-w-6xl mx-auto">
+    <h1 class="text-3xl font-bold text-center text-gray-800 mb-6">Wroclaw Public Transport Finder</h1>
+    
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Controls Panel -->
+        <div class="bg-white p-6 rounded-lg shadow-lg">
+            <h2 class="text-xl font-bold text-gray-800 mb-4">Search Parameters</h2>
+            
+            <!-- Start Coordinates -->
+            <div class="mb-4">
+                <label class="block text-gray-700 text-sm font-bold mb-2">Start Coordinates</label>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <input type="number" id="start-lat" step="0.0001" placeholder="Latitude"
+                               class="shadow border rounded w-full py-2 px-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <span class="text-red-500 text-xs" id="start-lat-error"></span>
+                    </div>
+                    <div>
+                        <input type="number" id="start-lon" step="0.0001" placeholder="Longitude"
+                               class="shadow border rounded w-full py-2 px-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <span class="text-red-500 text-xs" id="start-lon-error"></span>
+                    </div>
+                </div>
+                <p class="text-xs text-gray-500 mt-1">Click on map to set start location</p>
+            </div>
+            
+            <!-- Destination Coordinates -->
+            <div class="mb-4">
+                <label class="block text-gray-700 text-sm font-bold mb-2">Destination Coordinates</label>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <input type="number" id="end-lat" step="0.0001" placeholder="Latitude"
+                               class="shadow border rounded w-full py-2 px-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <span class="text-red-500 text-xs" id="end-lat-error"></span>
+                    </div>
+                    <div>
+                        <input type="number" id="end-lon" step="0.0001" placeholder="Longitude"
+                               class="shadow border rounded w-full py-2 px-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <span class="text-red-500 text-xs" id="end-lon-error"></span>
+                    </div>
+                </div>
+                <p class="text-xs text-gray-500 mt-1">Click on map to set destination</p>
+            </div>
+            
+            <!-- Departure Time -->
+            <div class="mb-4">
+                <label for="departure-time" class="block text-gray-700 text-sm font-bold mb-2">Departure Time</label>
+                <input type="datetime-local" id="departure-time"
+                       class="shadow border rounded w-full py-2 px-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <span class="text-red-500 text-xs" id="departure-time-error"></span>
+            </div>
+            
+            <!-- Result Limit -->
+            <div class="mb-4">
+                <label for="result-limit" class="block text-gray-700 text-sm font-bold mb-2">Result Limit</label>
+                <input type="number" id="result-limit" min="1" max="20" value="5"
+                       class="shadow border rounded w-full py-2 px-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <span class="text-red-500 text-xs" id="result-limit-error"></span>
+                <p class="text-xs text-gray-500 mt-1">Number of results (1-20)</p>
+            </div>
+            
+            <!-- Find Departures Button -->
+            <button id="find-departures-btn"
+                    class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200 flex items-center justify-center">
+                <span id="btn-text">Find Departures</span>
+                <svg id="loading-spinner" class="hidden animate-spin ml-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+            </button>
+            
+            <div id="status-message" class="mt-4 text-center text-sm"></div>
+        </div>
+        
+        <!-- Map Panel -->
+        <div class="bg-white p-6 rounded-lg shadow-lg">
+            <h2 class="text-xl font-bold text-gray-800 mb-4">Map</h2>
+            <div id="map" class="w-full h-96 rounded-lg"></div>
+        </div>
     </div>
-
-    <button id="call-api-btn"
-            class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition duration-200 ease-in-out transform hover:scale-105">
-        Call API
-    </button>
-
-    <div id="status-message" class="mt-4 text-center text-sm text-gray-600"></div>
-
-    <div class="mt-6">
-        <label for="json-output" class="block text-gray-700 text-sm font-bold mb-2">API Response (JSON):</label>
-        <textarea id="json-output"
-                  class="shadow appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent h-64 font-mono text-sm"
-                  readonly
-                  placeholder="API response will appear here..."></textarea>
+    
+    <!-- Results Container -->
+    <div id="results-container" class="mt-6"></div>
+    
+    <!-- JSON Output (collapsible) -->
+    <div class="bg-white p-6 rounded-lg shadow-lg mt-6">
+        <button id="toggle-json" class="text-gray-700 font-bold mb-2 hover:text-blue-600">▼ Show Raw JSON Response</button>
+        <textarea id="json-output" class="hidden shadow border rounded w-full py-3 px-4 text-gray-700 h-64 font-mono text-sm" readonly></textarea>
     </div>
 </div>
 
+<script src="api.js"></script>
+<script src="controls.js"></script>
 <script src="script.js"></script>
 </body>
 </html>

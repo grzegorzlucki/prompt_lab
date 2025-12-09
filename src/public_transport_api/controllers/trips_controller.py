@@ -1,7 +1,7 @@
 from flask import Blueprint, jsonify
 
 # Adjust import path based on your project structure
-from public_transport_api.services.trips_service import get_trip_details
+from src.public_transport_api.services.trips_service import get_trip_details
 
 trips_bp = Blueprint('trips', __name__, url_prefix='/public_transport/city/<string:city>/trip')
 
