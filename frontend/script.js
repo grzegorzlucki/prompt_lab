@@ -1,60 +1,77 @@
+let map;
+let startMarker = null;
+let endMarker = null;
+let startCoords = null;
+let endCoords = null;
+
 document.addEventListener('DOMContentLoaded', () => {
-
-    const apiEndpointSelector = document.getElementById('api-endpoint-selector');
-    const callApiButton = document.getElementById('call-api-btn');
-    const jsonOutputTextarea = document.getElementById('json-output');
-    const statusMessageDiv = document.getElementById('status-message');
-
-    callApiButton.addEventListener('click', handleCallApi);
-
-    async function handleCallApi() {
-        // Get the selected value from the dropdown
-        const apiUrl = apiEndpointSelector.value.trim();
-
-        if (!apiUrl) {
-            displayStatus('Please select an API endpoint.', 'text-red-600');
-            return;
-        }
-
-        // Clear previous output and status
-        jsonOutputTextarea.value = '';
-        displayStatus('Calling API...', 'text-blue-600');
-        callApiButton.disabled = true; // Disable button during fetch
-
-        try {
-            const response = await fetch(apiUrl);
-
-            if (!response.ok) {
-                // Attempt to read error message from response body if available
-                let errorMessage = `HTTP Error: ${response.status} ${response.statusText}`;
-                try {
-                    const errorData = await response.json();
-                    if (errorData.message) {
-                        errorMessage += ` - ${errorData.message}`;
-                    } else {
-                        errorMessage += ` - ${JSON.stringify(errorData)}`;
-                    }
-                } catch (parseError) {
-                    // If response is not JSON or empty, use default error message
-                }
-                throw new Error(errorMessage);
-            }
-
-            const data = await response.json();
-            jsonOutputTextarea.value = JSON.stringify(data, null, 2); // Pretty print JSON
-            displayStatus('API call successful!', 'text-green-600');
-
-        } catch (error) {
-            console.error("Failed to call API:", error);
-            jsonOutputTextarea.value = `Error: ${error.message}`;
-            displayStatus(`Error calling API: ${error.message}`, 'text-red-600');
-        } finally {
-            callApiButton.disabled = false; // Re-enable button
-        }
-    }
-
-    function displayStatus(message, colorClass) {
-        statusMessageDiv.textContent = message;
-        statusMessageDiv.className = `mt-4 text-center text-sm font-semibold ${colorClass}`;
-    }
+    initMap();
 });
+
+function initMap() {
+    // Initialize map centered on Wrocław
+    map = L.map('map').setView([51.1079, 17.0385], 13);
+    
+    // Add OpenStreetMap tiles
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+    
+    // Handle map clicks
+    map.on('click', handleMapClick);
+}
+
+function handleMapClick(e) {
+    const lat = e.latlng.lat.toFixed(6);
+    const lng = e.latlng.lng.toFixed(6);
+    
+    if (!startCoords) {
+        // Set start point
+        startCoords = { lat, lng };
+        document.getElementById('start-coords').value = `${lat}, ${lng}`;
+        
+        if (startMarker) map.removeLayer(startMarker);
+        startMarker = L.marker([lat, lng], {
+            icon: L.icon({
+                iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
+                shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+                iconSize: [25, 41],
+                iconAnchor: [12, 41]
+            })
+        }).addTo(map).bindPopup('Start').openPopup();
+        
+    } else if (!endCoords) {
+        // Set destination point
+        endCoords = { lat, lng };
+        document.getElementById('end-coords').value = `${lat}, ${lng}`;
+        
+        if (endMarker) map.removeLayer(endMarker);
+        endMarker = L.marker([lat, lng], {
+            icon: L.icon({
+                iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+                shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+                iconSize: [25, 41],
+                iconAnchor: [12, 41]
+            })
+        }).addTo(map).bindPopup('Destination').openPopup();
+        
+    } else {
+        // Reset and start over
+        startCoords = { lat, lng };
+        endCoords = null;
+        document.getElementById('start-coords').value = `${lat}, ${lng}`;
+        document.getElementById('end-coords').value = '';
+        
+        if (startMarker) map.removeLayer(startMarker);
+        if (endMarker) map.removeLayer(endMarker);
+        
+        startMarker = L.marker([lat, lng], {
+            icon: L.icon({
+                iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
+                shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+                iconSize: [25, 41],
+                iconAnchor: [12, 41]
+            })
+        }).addTo(map).bindPopup('Start').openPopup();
+    }
+}
