@@ -22,4 +22,4 @@ def closest_departures(city):
         - limit (optional, default: 5): The maximum number of departures to be returned.
     """
     # TODO handle request parameters and add the metadata. Include error handling.
-    return jsonify(get_closest_departures())
+    return jsonify({"departures": get_closest_departures()})
